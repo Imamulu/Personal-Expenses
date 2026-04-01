@@ -3,76 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Expense Tracker | Maaheer</title>
+    <title>Family Expense Tracker | Maaheer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --card: #ffffff;
-            --primary: #6366f1;
-            --text: #1e293b;
+            --primary: #4f46e5;
+            --secondary: #10b981;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg);
-            color: var(--text);
-            padding: 20px;
+            padding: 15px;
             margin: 0;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
         }
 
         .card {
             background: var(--card);
             padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
         .full-width { grid-column: span 2; }
 
-        h2 { margin-top: 0; font-size: 1.2rem; color: var(--primary); }
+        h2 { margin-top: 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 
-        .balance-display {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ef4444;
-            margin: 10px 0;
+        .total-box {
+            background: linear-gradient(135deg, #4f46e5, #9333ea);
+            color: white;
+            text-align: center;
+            padding: 20px;
         }
+
+        .total-amount { font-size: 2.2rem; font-weight: bold; margin: 5px 0; }
 
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 8px 0;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            box-sizing: border-box;
+            font-size: 14px;
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
+        button.add-btn {
             background: var(--primary);
             color: white;
             border: none;
+            padding: 12px;
+            width: 100%;
             border-radius: 8px;
-            cursor: pointer;
             font-weight: bold;
-        }
-
-        .history-list {
-            list-style: none;
-            padding: 0;
-            max-height: 200px;
-            overflow-y: auto;
+            cursor: pointer;
+            margin-top: 10px;
         }
 
         .history-item {
@@ -83,7 +78,13 @@
             font-size: 0.9rem;
         }
 
-        .delete-btn { color: #ef4444; cursor: pointer; border: none; background: none; }
+        .person-tag {
+            font-size: 0.75rem;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
 
         @media (max-width: 768px) {
             .container { grid-template-columns: 1fr; }
@@ -94,117 +95,133 @@
 <body>
 
 <div class="container">
-    <div class="card full-width" style="text-align: center;">
-        <h2>Total Expenses (Ee Month)</h2>
-        <div class="balance-display" id="totalBalance">₹0</div>
+    <div class="card full-width total-box">
+        <p>Total Family Expenses</p>
+        <div class="total-amount" id="totalDisplay">₹0</div>
     </div>
 
     <div class="card">
-        <h2>Add New Expense</h2>
-        <input type="text" id="reason" placeholder="Item Name (e.g. Petrol)">
-        <input type="number" id="amount" placeholder="Amount (e.g. 500)">
+        <h2><i class="fas fa-plus-circle"></i> Add Transaction</h2>
+        
+        <label>Evarikosam? (Person Name)</label>
+        <input type="text" id="person" placeholder="e.g., Self, Wife, Babu, Mother">
+        
+        <label>Reason (Deniki?)</label>
+        <input type="text" id="reason" placeholder="e.g., Milk, Toys, Petrol">
+        
+        <label>Amount (Entha?)</label>
+        <input type="number" id="amount" placeholder="₹">
+        
+        <label>Category</label>
         <select id="category">
-            <option value="Food">Food</option>
-            <option value="Travel">Travel/Petrol</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Bills">Bills/Recharge</option>
-            <option value="Others">Others</option>
+            <option value="Household">Household (Inti kharchulu)</option>
+            <option value="Personal">Personal</option>
+            <option value="Kids">Kids (Pillala kosam)</option>
+            <option value="Health">Health/Medical</option>
+            <option value="Entertainment">Entertainment</option>
         </select>
-        <button onclick="addEntry()">Add Entry</button>
+        
+        <button class="add-btn" onclick="saveData()">Add to List</button>
     </div>
 
     <div class="card">
-        <h2>Expense Breakdown</h2>
-        <canvas id="expenseChart"></canvas>
+        <h2><i class="fas fa-chart-pie"></i> Spending Analysis</h2>
+        <canvas id="myChart" height="250"></canvas>
     </div>
 
     <div class="card full-width">
-        <h2>Recent History</h2>
-        <div id="historyList" class="history-list"></div>
-        <button onclick="clearAll()" style="background:#94a3b8; margin-top:10px; font-size: 11px;">Reset All Data</button>
+        <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+        <div id="historyList"></div>
+        <button onclick="resetData()" style="margin-top:20px; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">Delete All History</button>
     </div>
 </div>
 
 <script>
-    let expenses = JSON.parse(localStorage.getItem('my_expenses')) || [];
-    let myChart;
+    let entries = JSON.parse(localStorage.getItem('family_tracker')) || [];
+    let chartInstance = null;
 
-    function addEntry() {
+    function saveData() {
+        const person = document.getElementById('person').value;
         const reason = document.getElementById('reason').value;
         const amount = parseFloat(document.getElementById('amount').value);
         const category = document.getElementById('category').value;
 
-        if(!reason || !amount) return alert("Details enter cheyandi!");
+        if(!person || !reason || !amount) return alert("Anni details fill cheyandi!");
 
-        expenses.push({ id: Date.now(), reason, amount, category });
-        updateUI();
+        entries.push({ id: Date.now(), person, reason, amount, category, date: new Date().toLocaleDateString() });
+        localStorage.setItem('family_tracker', JSON.stringify(entries));
         
+        // Inputs clear cheyadam
         document.getElementById('reason').value = '';
         document.getElementById('amount').value = '';
-    }
-
-    function deleteEntry(id) {
-        expenses = expenses.filter(e => e.id !== id);
+        
         updateUI();
     }
 
-    function clearAll() {
-        if(confirm("Motham data delete cheyala?")) {
-            expenses = [];
+    function deleteItem(id) {
+        entries = entries.filter(item => item.id !== id);
+        localStorage.setItem('family_tracker', JSON.stringify(entries));
+        updateUI();
+    }
+
+    function resetData() {
+        if(confirm("Motham data tholaginchala?")) {
+            entries = [];
+            localStorage.clear();
             updateUI();
         }
     }
 
     function updateUI() {
-        localStorage.setItem('my_expenses', JSON.stringify(expenses));
-        
-        // Update List
         const list = document.getElementById('historyList');
+        const totalDisp = document.getElementById('totalDisplay');
         list.innerHTML = '';
-        let total = 0;
         
-        const catTotals = { Food: 0, Travel: 0, Shopping: 0, Bills: 0, Others: 0 };
+        let total = 0;
+        let chartData = {};
 
-        expenses.reverse().forEach(e => {
-            total += e.amount;
-            catTotals[e.category] += e.amount;
+        entries.slice().reverse().forEach(item => {
+            total += item.amount;
             
+            // Chart logic (By Category)
+            chartData[item.category] = (chartData[item.category] || 0) + item.amount;
+
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
-                <span><b>${e.reason}</b> (${e.category})</span>
-                <span>₹${e.amount} <button class="delete-btn" onclick="deleteEntry(${e.id})"><i class="fas fa-times"></i></button></span>
+                <div>
+                    <strong>${item.reason}</strong> <span class="person-tag">${item.person}</span><br>
+                    <small style="color:#64748b">${item.date} | ${item.category}</small>
+                </div>
+                <div style="font-weight:bold;">
+                    ₹${item.amount} 
+                    <i class="fas fa-trash" style="color:#f87171; margin-left:10px; cursor:pointer;" onclick="deleteItem(${item.id})"></i>
+                </div>
             `;
             list.appendChild(div);
         });
-        expenses.reverse(); // Reset order for logic
 
-        document.getElementById('totalBalance').innerText = `₹${total}`;
-        updateChart(catTotals);
+        totalDisp.innerText = `₹${total}`;
+        drawChart(chartData);
     }
 
-    function updateChart(data) {
-        const ctx = document.getElementById('expenseChart').getContext('2d');
-        
-        if (myChart) myChart.destroy();
+    function drawChart(data) {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        if(chartInstance) chartInstance.destroy();
 
-        myChart = new Chart(ctx, {
+        chartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(data),
                 datasets: [{
                     data: Object.values(data),
-                    backgroundColor: ['#fbbf24', '#3b82f6', '#ec4899', '#10b981', '#94a3b8']
+                    backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
                 }]
             },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    // Start UI
     updateUI();
 </script>
 
