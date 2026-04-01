@@ -3,286 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maaheer | Smart Expense Tracker</title>
+    <title>Maaheer Tracker | Calculator Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #4338ca;
-            --bg: #f8fafc;
-            --text: #0f172a;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            padding: 10px;
-            color: var(--text);
-        }
-
-        .app-container {
-            max-width: 1000px;
-            margin: auto;
-        }
-
-        header {
-            text-align: center;
-            padding: 20px 0;
-            background: linear-gradient(135deg, #4338ca, #6366f1);
-            color: white;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
+        :root { --primary: #4338ca; --bg: #f1f5f9; --text: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; }
+        .app-container { max-width: 1000px; margin: auto; }
+        header { text-align: center; padding: 15px; background: #4338ca; color: white; border-radius: 12px; margin-bottom: 20px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .full-row { grid-column: 1 / -1; }
+        .input-group { margin-bottom: 10px; position: relative; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.85rem; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        /* Calculator Icon inside input */
+        .amt-wrapper { display: flex; gap: 5px; }
+        .calc-trigger { background: #e2e8f0; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; color: #4338ca; }
 
-        .input-group { margin-bottom: 15px; }
+        /* Calculator Styles */
+        #calc-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 100; width: 260px; }
+        .calc-screen { width: 100%; height: 50px; background: #f8fafc; border: 1px solid #ddd; text-align: right; padding: 10px; font-size: 1.5rem; margin-bottom: 10px; box-sizing: border-box; border-radius: 5px; }
+        .calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .key { padding: 15px; background: #f1f5f9; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .key.op { background: #dbeafe; color: #1e40af; }
+        .key.eq { background: #4338ca; color: white; grid-column: span 2; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 90; }
 
-        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem; color: #475569; }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn:hover { background: #3730a3; }
-
-        .total-box {
-            text-align: center;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 10px;
-            border-left: 5px solid var(--primary);
-        }
-
-        .total-box h1 { margin: 5px 0; color: #ef4444; font-size: 2.2rem; }
-
-        /* History Table */
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-update { background: #059669 !important; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { text-align: left; background: #f8fafc; padding: 12px; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
-
-        .tag-person { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; }
-        .tag-cat { color: #64748b; font-size: 0.8rem; font-style: italic; }
-
-        .delete-btn { color: #f87171; cursor: pointer; border: none; background: none; font-size: 1rem; }
-
-        @media (max-width: 768px) {
-            .main-grid { grid-template-columns: 1fr; }
-        }
+        td, th { padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.9rem; }
+        .tag-person { background: #e0e7ff; color: #4338ca; padding: 2px 5px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
+<div class="overlay" id="overlay" onclick="closeCalc()"></div>
+
 <div class="app-container">
-    <header>
-        <h1 style="margin:0;">Maaheer Tracker</h1>
-        <p style="margin:5px 0 0 0; opacity:0.9;">Daily Expense & Family Management</p>
-    </header>
+    <header><h1>Maaheer Tracker</h1></header>
 
     <div class="main-grid">
         <div class="card">
-            <h3 style="margin-top:0;"><i class="fas fa-plus-circle"></i> New Entry</h3>
-            
+            <h3 id="formTitle">New Entry</h3>
+            <input type="hidden" id="editId">
             <div class="input-group">
-                <label>Evarikosam? (Who is it for?)</label>
-                <input type="text" id="person" placeholder="e.g. Nenu, Wife, Babu, House">
+                <label>Evarikosam?</label>
+                <input type="text" id="person" placeholder="Self, Babu, Home...">
             </div>
-
             <div class="input-group">
-                <label>Item Name (Reason)</label>
-                <input type="text" id="item" placeholder="e.g. Milk, Petrol, Toys">
+                <label>Item Name</label>
+                <input type="text" id="item" placeholder="Petrol, Milk...">
             </div>
-
             <div class="input-group">
-                <label>Amount (Entha?)</label>
-                <input type="number" id="amount" placeholder="₹">
+                <label>Amount (₹)</label>
+                <div class="amt-wrapper">
+                    <input type="number" id="amount" placeholder="0">
+                    <button class="calc-trigger" onclick="openCalc()"><i class="fas fa-calculator"></i></button>
+                </div>
             </div>
-
             <div class="input-group">
                 <label>Category</label>
                 <select id="category">
-                    <option value="Household">Household (Inti kharchulu)</option>
-                    <option value="Kids">Kids (Pillala kosam)</option>
-                    <option value="Food">Food & Groceries</option>
-                    <option value="Travel">Travel / Petrol</option>
-                    <option value="Business">Business / Netcafe</option>
-                    <option value="Medical">Health / Medical</option>
-                    <option value="Personal">Personal</option>
+                    <option value="Household">Household</option>
+                    <option value="Kids">Kids</option>
+                    <option value="Food">Food</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Medical">Medical</option>
                 </select>
             </div>
-
-            <button class="btn" onclick="addExpense()">Save Transaction</button>
+            <button class="btn" id="saveBtn" onclick="handleSave()">Save Transaction</button>
+            <button class="btn" id="cancelBtn" onclick="resetForm()" style="display:none; background:#94a3b8;">Cancel</button>
         </div>
 
         <div class="card">
-            <div class="total-box">
-                <p style="margin:0; font-weight:bold; color:#64748b;">Total Monthly Spend</p>
-                <h1 id="grandTotal">₹0</h1>
+            <div style="text-align:center; padding:10px; background:#f8fafc; border-radius:8px;">
+                <p style="margin:0; font-size:0.8rem;">Total Spent</p>
+                <h2 id="totalAmt" style="margin:5px 0; color:#ef4444;">₹0</h2>
             </div>
-            
-            <h3 style="margin: 20px 0 10px 0;"><i class="fas fa-chart-pie"></i> Spending Analysis</h3>
-            <div style="height: 250px;">
-                <canvas id="expenseChart"></canvas>
-            </div>
+            <div style="height: 180px;"><canvas id="expenseChart"></canvas></div>
         </div>
 
         <div class="card full-row">
-            <h3 style="margin-top:0;"><i class="fas fa-list"></i> Recent History</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Details</th>
-                            <th>Person</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTable">
-                        </tbody>
-                </table>
-            </div>
-            <button onclick="clearAllData()" style="margin-top:20px; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:11px;">Clear All History</button>
+            <table id="historyTable">
+                <thead><tr><th>Item</th><th>Person</th><th>Amt</th><th>Action</th></tr></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
         </div>
     </div>
 </div>
 
+<div id="calc-modal">
+    <div class="calc-screen" id="display">0</div>
+    <div class="calc-keys">
+        <button class="key" onclick="press('7')">7</button>
+        <button class="key" onclick="press('8')">8</button>
+        <button class="key" onclick="press('9')">9</button>
+        <button class="key op" onclick="press('/')">/</button>
+        <button class="key" onclick="press('4')">4</button>
+        <button class="key" onclick="press('5')">5</button>
+        <button class="key" onclick="press('6')">6</button>
+        <button class="key op" onclick="press('*')">*</button>
+        <button class="key" onclick="press('1')">1</button>
+        <button class="key" onclick="press('2')">2</button>
+        <button class="key" onclick="press('3')">3</button>
+        <button class="key op" onclick="press('-')">-</button>
+        <button class="key" onclick="press('0')">0</button>
+        <button class="key" onclick="clearCalc()">C</button>
+        <button class="key op" onclick="press('+')">+</button>
+        <button class="key op" onclick="calculate()">=</button>
+        <button class="key eq" onclick="applyCalc()">APPLY</button>
+    </div>
+</div>
+
 <script>
-    let expenses = JSON.parse(localStorage.getItem('maaheer_tracker')) || [];
+    let expenses = JSON.parse(localStorage.getItem('maaheer_v3')) || [];
     let myChart = null;
 
-    function addExpense() {
+    // Calculator Logic
+    let currentInput = "0";
+    function openCalc() { 
+        document.getElementById('calc-modal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+    function closeCalc() { 
+        document.getElementById('calc-modal').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+    }
+    function press(val) {
+        if(currentInput === "0") currentInput = val;
+        else currentInput += val;
+        document.getElementById('display').innerText = currentInput;
+    }
+    function clearCalc() { currentInput = "0"; document.getElementById('display').innerText = "0"; }
+    function calculate() {
+        try { currentInput = eval(currentInput).toString(); document.getElementById('display').innerText = currentInput; }
+        catch { alert("Error!"); clearCalc(); }
+    }
+    function applyCalc() {
+        calculate();
+        document.getElementById('amount').value = currentInput;
+        closeCalc();
+    }
+
+    // Main Logic
+    function handleSave() {
+        const id = document.getElementById('editId').value;
         const person = document.getElementById('person').value;
         const item = document.getElementById('item').value;
         const amount = parseFloat(document.getElementById('amount').value);
         const category = document.getElementById('category').value;
 
-        if(!person || !item || !amount) {
-            alert("Dayachesi anni details fill cheyandi!");
-            return;
+        if(!person || !item || !amount) return alert("Fill all fields");
+
+        if(id) {
+            expenses = expenses.map(e => e.id == id ? {...e, person, item, amount, category} : e);
+        } else {
+            expenses.push({ id: Date.now(), person, item, amount, category, date: new Date().toLocaleDateString() });
         }
+        localStorage.setItem('maaheer_v3', JSON.stringify(expenses));
+        resetForm();
+        render();
+    }
 
-        const newEntry = {
-            id: Date.now(),
-            person,
-            item,
-            amount,
-            category,
-            date: new Date().toLocaleDateString('en-IN')
-        };
+    function editEntry(id) {
+        const e = expenses.find(x => x.id == id);
+        document.getElementById('editId').value = e.id;
+        document.getElementById('person').value = e.person;
+        document.getElementById('item').value = e.item;
+        document.getElementById('amount').value = e.amount;
+        document.getElementById('category').value = e.category;
+        document.getElementById('saveBtn').innerText = "Update";
+        document.getElementById('saveBtn').classList.add('btn-update');
+        document.getElementById('cancelBtn').style.display = 'block';
+    }
 
-        expenses.push(newEntry);
-        saveAndUpdate();
-        
-        // Reset only item and amount, keep person for next entry
+    function deleteEntry(id) {
+        if(confirm("Delete?")) { expenses = expenses.filter(x => x.id != id); localStorage.setItem('maaheer_v3', JSON.stringify(expenses)); render(); }
+    }
+
+    function resetForm() {
+        document.getElementById('editId').value = '';
         document.getElementById('item').value = '';
         document.getElementById('amount').value = '';
+        document.getElementById('saveBtn').innerText = "Save Transaction";
+        document.getElementById('saveBtn').classList.remove('btn-update');
+        document.getElementById('cancelBtn').style.display = 'none';
     }
 
-    function deleteExpense(id) {
-        expenses = expenses.filter(e => e.id !== id);
-        saveAndUpdate();
-    }
-
-    function clearAllData() {
-        if(confirm("Motham karchula history delete cheyala?")) {
-            expenses = [];
-            saveAndUpdate();
-        }
-    }
-
-    function saveAndUpdate() {
-        localStorage.setItem('maaheer_tracker', JSON.stringify(expenses));
-        renderUI();
-    }
-
-    function renderUI() {
-        const tableBody = document.getElementById('historyTable');
-        const grandTotal = document.getElementById('grandTotal');
-        tableBody.innerHTML = '';
-        
-        let total = 0;
-        let chartData = {};
-
-        // Process expenses (Newest first)
+    function render() {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = '';
+        let total = 0, chartData = {};
         expenses.slice().reverse().forEach(e => {
             total += e.amount;
             chartData[e.category] = (chartData[e.category] || 0) + e.amount;
-
-            const row = `
-                <tr>
-                    <td><strong>${e.item}</strong><br><small style="color:#94a3b8">${e.date}</small></td>
-                    <td><span class="tag-person">${e.person}</span></td>
-                    <td><span class="tag-cat">${e.category}</span></td>
-                    <td style="font-weight:bold;">₹${e.amount}</td>
-                    <td><button class="delete-btn" onclick="deleteExpense(${e.id})"><i class="fas fa-trash-alt"></i></button></td>
-                </tr>
-            `;
-            tableBody.innerHTML += row;
+            body.innerHTML += `<tr>
+                <td>${e.item}</td>
+                <td><span class="tag-person">${e.person}</span></td>
+                <td>₹${e.amount}</td>
+                <td>
+                    <i class="fas fa-edit" style="color:blue; cursor:pointer" onclick="editEntry(${e.id})"></i>
+                    <i class="fas fa-trash" style="color:red; cursor:pointer; margin-left:10px" onclick="deleteEntry(${e.id})"></i>
+                </td>
+            </tr>`;
         });
-
-        grandTotal.innerText = `₹${total.toLocaleString('en-IN')}`;
+        document.getElementById('totalAmt').innerText = `₹${total}`;
         updateChart(chartData);
     }
 
     function updateChart(data) {
         const ctx = document.getElementById('expenseChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
+        if(myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels: Object.keys(data),
-                datasets: [{
-                    data: Object.values(data),
-                    backgroundColor: ['#4f46e5', '#ef4444', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#64748b'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } }
-            }
+            data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#4f46e5', '#ef4444', '#10b981', '#f59e0b', '#06b6d4'] }] },
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    // Initial Load
-    renderUI();
+    render();
 </script>
-
 </body>
 </html>
